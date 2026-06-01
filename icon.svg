@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient: Skyflow Premium Mesh -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />     <!-- Indigo -->
+      <stop offset="50%" stop-color="#3b82f6" />    <!-- Blue -->
+      <stop offset="100%" stop-color="#0ea5e9" />   <!-- Cyan -->
+    </linearGradient>
+
+    <!-- Sun Glow Gradient -->
+    <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="1" />
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Drop Shadows for Glass Elements -->
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#020617" flood-opacity="0.35" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Shell Background (Android Maskable Compliant) -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Ambient Backdrop Circles for Visual Depth -->
+  <circle cx="160" cy="160" r="140" fill="#ffffff" opacity="0.08" filter="blur(20px)" />
+  <circle cx="360" cy="380" r="120" fill="#000000" opacity="0.12" filter="blur(30px)" />
+
+  <!-- The Group Weather Composition with drop shadow -->
+  <g filter="url(#shadow)">
+    <!-- 1. The Sun (Back Layer) -->
+    <g transform="translate(190, 140)">
+      <!-- Outer Sun Rays & Glow -->
+      <circle cx="70" cy="70" r="85" fill="url(#sunGlow)" opacity="0.4" />
+      <!-- Inner Solid Sun Core -->
+      <circle cx="70" cy="70" r="50" fill="#fbbf24" />
+      <!-- Sun Rays -->
+      <path d="M 70 -5 L 70 15 M 70 125 L 70 145 M -5 70 L 15 70 M 125 70 L 145 70 M 17 17 L 31 31 M 109 109 L 123 123 M 17 123 L 31 109 M 109 17 L 123 31" 
+            stroke="#fbbf24" stroke-width="8" stroke-linecap="round" />
+    </g>
+
+    <!-- 2. The Cloud (Mid Layer) -->
+    <path d="M 160 350 
+             a 60 60 0 0 1 0 -120 
+             a 70 70 0 0 1 125 -40 
+             a 85 85 0 0 1 150 25 
+             a 65 65 0 0 1 5 130 
+             z" 
+          fill="#ffffff" />
+    
+    <!-- Cloud Highlight Rim (Gives premium glossy top edge) -->
+    <path d="M 162 342 
+             a 58 58 0 0 1 0 -116 
+             a 68 68 0 0 1 122 -38 
+             a 83 83 0 0 1 146 22" 
+          fill="none" stroke="#f1f5f9" stroke-width="4" stroke-linecap="round" opacity="0.5" />
+
+    <!-- 3. The Lightning Bolt (Fore Layer) -->
+    <path d="M 290 290 
+             L 230 390 
+             L 280 390 
+             L 250 480 
+             L 330 360 
+             L 280 360 
+             Z" 
+          fill="#eab308" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" />
+  </g>
+</svg>

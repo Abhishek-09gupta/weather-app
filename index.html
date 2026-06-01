@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skyflow Weather | Premium Real-Time Weather Dashboard</title>
+    <meta name="description" content="Experience weather forecasting in high fidelity. Search global cities or use GPS geolocation to view dynamic themes, hourly temperature trends, and a 7-day forecast.">
+    <!-- Google Fonts: Outfit for sleek modern UI, Inter for details -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PWA Configurations -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-default">
+    <!-- Fluid background gradient mesh -->
+    <div class="ambient-bg" aria-hidden="true"></div>
+    <div class="ambient-bg-glow" aria-hidden="true"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation & Control Header -->
+        <header class="app-header">
+            <div class="brand">
+                <i data-lucide="cloud-lightning" class="brand-icon"></i>
+                <h1>Skyflow</h1>
+            </div>
+
+            <!-- Search and Controls Block -->
+            <div class="controls-wrapper">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="city-search" placeholder="Search city name..." autocomplete="off">
+                        <button id="clear-search" class="icon-btn hidden" aria-label="Clear search">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <!-- Auto-complete Results Panel -->
+                    <div id="search-suggestions" class="suggestions-panel hidden"></div>
+                </div>
+
+                <!-- Action Button Controls -->
+                <div class="action-buttons">
+                    <button id="gps-btn" class="control-btn" title="Use current location" aria-label="Use current location">
+                        <i data-lucide="map-pin"></i>
+                        <span>Locate</span>
+                    </button>
+                    
+                    <div class="unit-toggle-wrapper">
+                        <span class="unit-label">°C</span>
+                        <label class="switch" for="unit-checkbox">
+                            <input type="checkbox" id="unit-checkbox" aria-label="Toggle temperature unit between Celsius and Fahrenheit">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="unit-label">°F</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard View -->
+        <main class="main-content">
+            <!-- Loading Indicator -->
+            <div id="loading-spinner" class="loading-state hidden">
+                <div class="spinner"></div>
+                <p>Retrieving local weather systems...</p>
+            </div>
+
+            <!-- Error State Panel -->
+            <div id="error-card" class="error-state hidden">
+                <i data-lucide="alert-triangle" class="error-icon"></i>
+                <h2>Weather Query Failed</h2>
+                <p id="error-message">Could not retrieve the requested location. Please check your spelling and try again.</p>
+                <button id="error-retry-btn" class="action-btn">Dismiss</button>
+            </div>
+
+            <!-- Entry / Welcome State -->
+            <div id="welcome-state" class="welcome-card">
+                <div class="welcome-graphics">
+                    <div class="sun-glow"></div>
+                    <i data-lucide="sun" class="welcome-sun animate-spin-slow"></i>
+                    <i data-lucide="cloud" class="welcome-cloud-1"></i>
+                    <i data-lucide="cloud-rain" class="welcome-cloud-2"></i>
+                </div>
+                <h2>Explore the Skies</h2>
+                <p>Search for any global location above or use your local GPS telemetry to view gorgeous, real-time atmospheric updates.</p>
+                <button id="welcome-gps-btn" class="welcome-locate-btn">
+                    <i data-lucide="map-pin"></i>
+                    Locate Me
+                </button>
+            </div>
+
+            <!-- Active Dashboard Grid -->
+            <div id="dashboard-grid" class="dashboard-grid hidden">
+                
+                <!-- LEFT COLUMN: Primary Details & Key Metrics -->
+                <div class="dashboard-column col-left">
+                    <!-- Current Weather Card -->
+                    <section class="weather-card primary-weather-card" id="primary-card">
+                        <div class="card-header">
+                            <div class="location-details">
+                                <h2 id="location-name">San Francisco</h2>
+                                <p id="location-country">United States</p>
+                            </div>
+                            <span id="current-date" class="date-badge">Tuesday, June 2</span>
+                        </div>
+
+                        <div class="weather-display">
+                            <div class="weather-visual">
+                                <div id="weather-dynamic-icon" class="main-weather-icon-wrapper">
+                                    <!-- Dynamic weather icon is injected here -->
+                                    <i data-lucide="sun" class="main-weather-icon"></i>
+                                </div>
+                            </div>
+                            <div class="temp-readout">
+                                <span id="current-temp" class="large-temp">24</span>
+                                <span class="temp-degree-symbol">°</span>
+                            </div>
+                        </div>
+
+                        <div class="weather-desc-row">
+                            <span id="weather-description" class="weather-text">Clear Sky</span>
+                            <div class="temp-range-badge">
+                                <i data-lucide="chevrons-up-down"></i>
+                                <span id="min-max-temp">Min: 15° | Max: 27°</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Core Metrics Grid -->
+                    <section class="metrics-grid" aria-label="Atmospheric Metrics">
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-blue">
+                                <i data-lucide="droplets"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Humidity</span>
+                                <span id="metric-humidity" class="metric-value">64%</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-teal">
+                                <i data-lucide="wind"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Wind Speed</span>
+                                <span id="metric-wind" class="metric-value">12 km/h</span>
+                                <span id="metric-wind-dir" class="metric-subtext">NW</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-amber">
+                                <i data-lucide="sun-dim"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">UV Index</span>
+                                <span id="metric-uv" class="metric-value">4.2</span>
+                                <span id="metric-uv-risk" class="metric-subtext">Moderate</span>
+                            </div>
+                        </div>
+
+                        <div class="metric-card">
+                            <div class="metric-icon-wrap bg-indigo">
+                                <i data-lucide="cloud-rain"></i>
+                            </div>
+                            <div class="metric-info">
+                                <span class="metric-label">Precipitation</span>
+                                <span id="metric-rain" class="metric-value">10%</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- RIGHT COLUMN: Trends and Long-range Forecast -->
+                <div class="dashboard-column col-right">
+                    <!-- Hourly Forecast & SVG Chart -->
+                    <section class="weather-card hourly-forecast-card">
+                        <h3>Hourly Temperature Trend</h3>
+                        
+                        <!-- SVG Curve Chart Container -->
+                        <div class="svg-chart-container">
+                            <svg id="hourly-chart" viewBox="0 0 800 180" preserveAspectRatio="none">
+                                <!-- Dynamic gradient definitions for SVG fill -->
+                                <defs>
+                                    <linearGradient id="chart-fill-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" stop-color="var(--chart-line-color)" stop-opacity="0.4"/>
+                                        <stop offset="100%" stop-color="var(--chart-line-color)" stop-opacity="0.0"/>
+                                    </linearGradient>
+                                </defs>
+                                <!-- Temperature curve fill -->
+                                <path id="chart-path-fill" d="" fill="url(#chart-fill-grad)"></path>
+                                <!-- Temperature curve outline -->
+                                <path id="chart-path-line" d="" fill="none" stroke="var(--chart-line-color)" stroke-width="4.5" stroke-linecap="round"></path>
+                                <!-- SVG data nodes and custom floating labels are dynamically rendered -->
+                                <g id="chart-data-nodes"></g>
+                            </svg>
+                        </div>
+
+                        <!-- Horizontally Scrollable Timeline Labels -->
+                        <div class="hourly-timeline-row" id="hourly-timeline">
+                            <!-- Injected elements with time, weather icon, and temperature -->
+                        </div>
+                    </section>
+
+                    <!-- 7-Day Long Range Forecast -->
+                    <section class="weather-card daily-forecast-card">
+                        <h3>7-Day Outlook</h3>
+                        <div class="daily-forecast-list" id="daily-forecast">
+                            <!-- Injected 7-day weather entries -->
+                        </div>
+                    </section>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Main JS Application script -->
+    <script src="app.js"></script>
+</body>
+</html>

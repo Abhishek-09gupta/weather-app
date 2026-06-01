@@ -1,0 +1,26 @@
+{
+  "name": "Skyflow Weather Dashboard",
+  "short_name": "Skyflow",
+  "description": "Experience weather forecasting in high fidelity. Real-time conditions, hourly trends, and a 7-day outlook.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "categories": ["weather", "utilities"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

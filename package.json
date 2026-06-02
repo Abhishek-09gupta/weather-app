@@ -1,30 +1,25 @@
 {
   "name": "skyflow-weather",
   "version": "1.0.0",
-  "description": "Skyflow Premium Weather Dashboard Desktop App",
-  "main": "main.js",
+  "description": "Skyflow Premium Weather Dashboard - Real-Time Web App",
   "author": "Abhishek Gupta",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
-    "build": "electron-builder"
+    "start": "python -m http.server 3000",
+    "dev": "python -m http.server 3000",
+    "build": "echo 'Static site ready for deployment'"
   },
-  "devDependencies": {
-    "electron": "^42.3.2",
-    "electron-builder": "^26.8.1"
-  },
-  "build": {
-    "appId": "com.skyflow.weather",
-    "productName": "Skyflow Weather",
-    "win": {
-      "target": "nsis"
-    }
-  },
+  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Abhishek-09gupta/weather-app.git"
   },
-  "keywords": [],
+  "keywords": [
+    "weather",
+    "dashboard",
+    "real-time",
+    "forecast"
+  ],
   "bugs": {
     "url": "https://github.com/Abhishek-09gupta/weather-app/issues"
   },

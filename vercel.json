@@ -1,26 +1,7 @@
 {
   "version": 2,
-  "name": "skyflow-weather",
-  "public": true,
   "buildCommand": "npm run build",
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "style.css",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "app.js",
-      "use": "@vercel/static"
-    },
-    {
-      "src": "sw.js",
-      "use": "@vercel/static"
-    }
-  ],
+  "public": true,
   "routes": [
     {
       "src": "/sw.js",
@@ -28,6 +9,18 @@
       "headers": {
         "Cache-Control": "public, max-age=0, must-revalidate"
       }
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/style.css",
+      "dest": "/style.css"
+    },
+    {
+      "src": "/app.js",
+      "dest": "/app.js"
     },
     {
       "src": "/(.*)",

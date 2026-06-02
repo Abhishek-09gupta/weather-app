@@ -4,11 +4,7 @@
   "description": "Skyflow Premium Weather Dashboard - Real-Time Web App",
   "author": "Abhishek Gupta",
   "license": "MIT",
-  "scripts": {
-    "start": "python -m http.server 3000",
-    "dev": "python -m http.server 3000",
-    "build": "echo 'Static site ready for deployment'"
-  },
+  "scripts": {},
   "devDependencies": {},
   "repository": {
     "type": "git",

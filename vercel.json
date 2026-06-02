@@ -33,8 +33,5 @@
       "src": "/(.*)",
       "dest": "/index.html"
     }
-  ],
-  "env": {
-    "VERCEL_URL": "@vercel_url"
-  }
+  ]
 }

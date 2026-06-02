@@ -6,10 +6,10 @@
 const state = {
     currentWeather: null, // Cached raw weather data in Celsius
     selectedLocation: {
-        name: "San Francisco",
-        country: "United States",
-        latitude: 37.7749,
-        longitude: -122.4194
+        name: "Mumbai",
+        country: "India",
+        latitude: 19.0760,
+        longitude: 72.8777
     },
     useFahrenheit: false,
     theme: "theme-default"
@@ -682,7 +682,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Inject initial static Lucide Icons mapped in HTML templates
     lucide.createIcons();
     
-    // Loads Default City (San Francisco) on bootstrap startup
+    // Loads Default City (Mumbai, India) on bootstrap startup
     fetchWeatherData(state.selectedLocation.latitude, state.selectedLocation.longitude);
 
     // Register Progressive Web App (PWA) Service Worker for offline/install capabilities

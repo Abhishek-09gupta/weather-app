@@ -337,6 +337,53 @@ function renderHourlyChart(hourlyTemps) {
 }
 
 /**
+ * Updates the hourly timeline display when a specific day is selected from 7-Day Outlook
+ */
+function renderHourlyTimeline(dateStr, hourlyTemps, hourlyPrecip) {
+    if (!dom.hourlyTimeline) return;
+    
+    dom.hourlyTimeline.innerHTML = "";
+    
+    // Display selected day header
+    const header = document.createElement("div");
+    header.style.fontSize = "14px";
+    header.style.fontWeight = "600";
+    header.style.color = "rgba(255,255,255,0.8)";
+    header.style.marginBottom = "16px";
+    header.style.paddingBottom = "12px";
+    header.style.borderBottom = "1px solid rgba(255,255,255,0.1)";
+    header.textContent = `Hourly Forecast - ${formatDayName(dateStr)}`;
+    dom.hourlyTimeline.appendChild(header);
+    
+    // Create hourly items for the selected day
+    for (let i = 0; i < hourlyTemps.length; i += 3) { // Show every 3 hours to avoid clutter
+        const hour = i;
+        const temp = hourlyTemps[i];
+        const precip = hourlyPrecip[i] || 0;
+        
+        const item = document.createElement("div");
+        item.style.display = "flex";
+        item.style.alignItems = "center";
+        item.style.justifyContent = "space-between";
+        item.style.padding = "10px 0";
+        item.style.fontSize = "13px";
+        item.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+        
+        const timeStr = String(hour).padStart(2, "0") + ":00";
+        const tempStr = formatTemp(temp);
+        const precipStr = `${precip}%`;
+        
+        item.innerHTML = `
+            <span style="color: rgba(255,255,255,0.9);">${timeStr}</span>
+            <span style="color: var(--accent-color); font-weight: 600;">${tempStr}</span>
+            <span style="color: rgba(99, 150, 241, 0.8);" title="Precipitation chance">💧 ${precipStr}</span>
+        `;
+        
+        dom.hourlyTimeline.appendChild(item);
+    }
+}
+
+/**
  * Redraws, maps, and repopulates the entire Weather Dashboard interface using state caches
  */
 function updateDashboardUI() {
@@ -442,6 +489,7 @@ function updateDashboardUI() {
 
         const row = document.createElement("div");
         row.className = "daily-item";
+        row.style.cursor = "pointer";
         row.innerHTML = `
             <span class="daily-name">${formatDayName(timeStr)}</span>
             <div class="daily-icon-wrapper" title="${dayConfig.label}">
@@ -455,6 +503,38 @@ function updateDashboardUI() {
                 <span class="daily-temp-min">${formatTemp(minTemp)}</span>
             </div>
         `;
+        
+        // Add click handler to show hourly forecast for selected day
+        row.addEventListener("click", () => {
+            // Remove active state from all daily items
+            document.querySelectorAll(".daily-item").forEach(item => {
+                item.classList.remove("active");
+            });
+            
+            // Add active state to clicked item
+            row.classList.add("active");
+            
+            // Get hourly data for the selected day
+            const startIdx = i * 24; // Each day has 24 hours
+            const endIdx = startIdx + 24;
+            const dayHourlyTempsRaw = hourly.temperature_2m.slice(startIdx, endIdx);
+            const dayHourlyPrecip = hourly.precipitation_probability.slice(startIdx, endIdx);
+            
+            // Format as expected by renderHourlyChart (array of objects with .temp property)
+            const dayHourlyTemps = dayHourlyTempsRaw.map(temp => ({ temp }));
+            
+            // Update hourly chart for selected day
+            renderHourlyChart(dayHourlyTemps);
+            
+            // Update hourly timeline labels for the selected day
+            renderHourlyTimeline(timeStr, dayHourlyTempsRaw, dayHourlyPrecip);
+        });
+        
+        // Click first day by default to show its hourly data
+        if (i === 0) {
+            row.classList.add("active");
+        }
+        
         dom.dailyForecast.appendChild(row);
     }
 

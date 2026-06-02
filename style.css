@@ -349,6 +349,31 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--accent-color);
 }
 
+/* Install App Button Special Styling */
+.install-btn {
+    background: linear-gradient(135deg, var(--accent-color), rgba(99, 102, 241, 0.8));
+    border-color: rgba(99, 102, 241, 0.5);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+.install-btn:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 1), rgba(99, 102, 241, 0.9));
+    border-color: rgba(99, 102, 241, 0.8);
+    box-shadow: 0 6px 30px rgba(99, 102, 241, 0.5);
+    transform: translateY(-3px);
+}
+
+.install-btn i {
+    color: #ffffff;
+}
+
+/* Hidden utility class */
+.hidden {
+    display: none !important;
+}
+
 /* Custom Unit Toggle Switches */
 .unit-toggle-wrapper {
     display: flex;

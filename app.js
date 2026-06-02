@@ -23,6 +23,7 @@ const dom = {
     gpsBtn: document.getElementById("gps-btn"),
     welcomeGpsBtn: document.getElementById("welcome-gps-btn"),
     unitCheckbox: document.getElementById("unit-checkbox"),
+    installBtn: document.getElementById("install-btn"),
     loadingSpinner: document.getElementById("loading-spinner"),
     errorCard: document.getElementById("error-card"),
     errorMessage: document.getElementById("error-message"),
@@ -551,6 +552,49 @@ dom.errorRetryBtn.addEventListener("click", () => {
     } else {
         showState("welcome");
     }
+});
+
+// --- PWA INSTALL FUNCTIONALITY ---
+let deferredPrompt; // Holds the install prompt event
+
+window.addEventListener("beforeinstallprompt", (e) => {
+    // Prevent automatic install prompt
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Show the install button
+    if (dom.installBtn) {
+        dom.installBtn.classList.remove("hidden");
+    }
+});
+
+// Handle install button click
+if (dom.installBtn) {
+    dom.installBtn.addEventListener("click", async () => {
+        if (deferredPrompt) {
+            // Show the install prompt
+            deferredPrompt.prompt();
+            
+            // Wait for user to respond
+            const { outcome } = await deferredPrompt.userChoice;
+            console.log(`User response to install prompt: ${outcome}`);
+            
+            // Clear the deferred prompt
+            deferredPrompt = null;
+            
+            // Hide the install button
+            dom.installBtn.classList.add("hidden");
+        }
+    });
+}
+
+// Hide install button if app is already installed
+window.addEventListener("appinstalled", () => {
+    console.log("PWA was installed successfully");
+    if (dom.installBtn) {
+        dom.installBtn.classList.add("hidden");
+    }
+    deferredPrompt = null;
 });
 
 // --- INITIALIZE SYSTEM ---

@@ -47,8 +47,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // Avoid intercepting API queries (e.g. Open-Meteo weather coordinate fetches)
-  if (requestUrl.hostname.includes('open-meteo.com')) {
+  // Avoid intercepting API queries (e.g. Open-Meteo or OpenWeatherMap fetches)
+  if (requestUrl.hostname.includes('open-meteo.com') || requestUrl.hostname.includes('openweathermap.org')) {
     event.respondWith(
       fetch(event.request).catch(() => {
         // Return cached version of weather if possible, or just fail gracefully

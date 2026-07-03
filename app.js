@@ -4,7 +4,10 @@
 
 // --- GLOBAL APPLICATION STATE ---
 const state = {
-    currentWeather: null, // Cached raw weather data in Celsius
+    currentWeather: null,  // Cached parsed current weather data
+    hourlyForecast: [],    // Next 8 forecast items (3-hour intervals)
+    dailyForecast: [],     // 5-day processed forecast
+    fullForecastList: [],  // Full forecast list (for day click details)
     selectedLocation: {
         name: "Mumbai",
         country: "India",
@@ -12,11 +15,20 @@ const state = {
         longitude: 72.8777
     },
     useFahrenheit: false,
-    theme: "theme-default"
+    theme: "theme-default",
+    apiKey: localStorage.getItem("openweather_api_key") || ""
 };
 
 // --- DOM ELEMENTS REFERENCE ---
 const dom = {
+    apiKeyBtn: document.getElementById("api-key-btn"),
+    apiKeyDropdown: document.getElementById("api-key-dropdown"),
+    apiKeyInput: document.getElementById("api-key-input"),
+    apiKeySaveBtn: document.getElementById("api-key-save-btn"),
+    apiKeySetupState: document.getElementById("api-key-setup-state"),
+    setupKeyInput: document.getElementById("setup-key-input"),
+    setupKeySaveBtn: document.getElementById("setup-key-save-btn"),
+
     citySearch: document.getElementById("city-search"),
     clearSearch: document.getElementById("clear-search"),
     searchSuggestions: document.getElementById("search-suggestions"),
@@ -86,41 +98,60 @@ function formatTemp(tempC) {
 }
 
 /**
- * Map standard WMO Weather Codes to descriptive strings, vector icons, and dynamic CSS themes.
+ * Map OpenWeatherMap Condition IDs to descriptive strings, vector icons, and dynamic CSS themes.
  */
-function getWeatherConfig(code, isDay = 1) {
-    // Standard WMO weather interpretation codes
-    const config = {
-        0: { icon: isDay ? 'sun' : 'moon', label: 'Clear Sky', theme: isDay ? 'theme-sunny' : 'theme-night' },
-        1: { icon: isDay ? 'cloud-sun' : 'cloud-moon', label: 'Mainly Clear', theme: isDay ? 'theme-sunny' : 'theme-night' },
-        2: { icon: 'cloud', label: 'Partly Cloudy', theme: 'theme-cloudy' },
-        3: { icon: 'cloud', label: 'Overcast', theme: 'theme-cloudy' },
-        45: { icon: 'cloud-fog', label: 'Foggy', theme: 'theme-cloudy' },
-        48: { icon: 'cloud-fog', label: 'Rime Fog', theme: 'theme-cloudy' },
-        51: { icon: 'cloud-drizzle', label: 'Light Drizzle', theme: 'theme-rainy' },
-        53: { icon: 'cloud-drizzle', label: 'Moderate Drizzle', theme: 'theme-rainy' },
-        55: { icon: 'cloud-drizzle', label: 'Dense Drizzle', theme: 'theme-rainy' },
-        56: { icon: 'snowflake', label: 'Light Freezing Drizzle', theme: 'theme-snowy' },
-        57: { icon: 'snowflake', label: 'Heavy Freezing Drizzle', theme: 'theme-snowy' },
-        61: { icon: 'cloud-rain', label: 'Slight Rain', theme: 'theme-rainy' },
-        63: { icon: 'cloud-rain', label: 'Moderate Rain', theme: 'theme-rainy' },
-        65: { icon: 'cloud-rain', label: 'Heavy Rain', theme: 'theme-rainy' },
-        66: { icon: 'snowflake', label: 'Light Freezing Rain', theme: 'theme-snowy' },
-        67: { icon: 'snowflake', label: 'Heavy Freezing Rain', theme: 'theme-snowy' },
-        71: { icon: 'snowflake', label: 'Slight Snowfall', theme: 'theme-snowy' },
-        73: { icon: 'snowflake', label: 'Moderate Snowfall', theme: 'theme-snowy' },
-        75: { icon: 'snowflake', label: 'Heavy Snowfall', theme: 'theme-snowy' },
-        77: { icon: 'snowflake', label: 'Snow Grains', theme: 'theme-snowy' },
-        80: { icon: 'cloud-rain', label: 'Slight Rain Showers', theme: 'theme-rainy' },
-        81: { icon: 'cloud-rain', label: 'Moderate Rain Showers', theme: 'theme-rainy' },
-        82: { icon: 'cloud-rain', label: 'Violent Rain Showers', theme: 'theme-rainy' },
-        85: { icon: 'cloud-snow', label: 'Slight Snow Showers', theme: 'theme-snowy' },
-        86: { icon: 'cloud-snow', label: 'Heavy Snow Showers', theme: 'theme-snowy' },
-        95: { icon: 'cloud-lightning', label: 'Thunderstorm', theme: 'theme-stormy' },
-        96: { icon: 'cloud-lightning', label: 'Storm with Hail', theme: 'theme-stormy' },
-        99: { icon: 'cloud-lightning', label: 'Heavy Storm with Hail', theme: 'theme-stormy' }
-    };
-    return config[code] || { icon: 'cloud', label: 'Cloudy', theme: 'theme-cloudy' };
+function getOpenWeatherConfig(id, iconCode) {
+    const isDay = iconCode ? iconCode.endsWith('d') : true;
+    
+    // Clear sky
+    if (id === 800) {
+        return { icon: isDay ? 'sun' : 'moon', label: 'Clear Sky', theme: isDay ? 'theme-sunny' : 'theme-night' };
+    }
+    // Clouds
+    if (id === 801 || id === 802) {
+        return { icon: isDay ? 'cloud-sun' : 'cloud-moon', label: id === 801 ? 'Few Clouds' : 'Scattered Clouds', theme: isDay ? 'theme-sunny' : 'theme-night' };
+    }
+    if (id === 803 || id === 804) {
+        return { icon: 'cloud', label: id === 803 ? 'Broken Clouds' : 'Overcast Clouds', theme: 'theme-cloudy' };
+    }
+    // Thunderstorm
+    if (id >= 200 && id < 300) {
+        return { icon: 'cloud-lightning', label: 'Thunderstorm', theme: 'theme-stormy' };
+    }
+    // Drizzle
+    if (id >= 300 && id < 400) {
+        return { icon: 'cloud-drizzle', label: 'Drizzle', theme: 'theme-rainy' };
+    }
+    // Rain
+    if (id >= 500 && id < 600) {
+        if (id === 511) {
+            return { icon: 'snowflake', label: 'Freezing Rain', theme: 'theme-snowy' };
+        }
+        return { icon: 'cloud-rain', label: 'Rainy', theme: 'theme-rainy' };
+    }
+    // Snow
+    if (id >= 600 && id < 700) {
+        return { icon: 'snowflake', label: 'Snowy', theme: 'theme-snowy' };
+    }
+    // Atmosphere (fog, haze, etc.)
+    if (id >= 700 && id < 800) {
+        return { icon: 'cloud-fog', label: 'Foggy', theme: 'theme-cloudy' };
+    }
+    return { icon: 'cloud', label: 'Cloudy', theme: 'theme-cloudy' };
+}
+
+/**
+ * Simple estimation of UV index based on weather ID and latitude
+ */
+function estimateUvIndex(weatherId, lat) {
+    let base = 5.0; // Moderate
+    if (weatherId === 800) base = 8.0; // Clear
+    else if (weatherId < 800) base = 2.0; // Stormy/rainy/snowy
+    else base = 4.0; // Cloudy
+    
+    // Reduce UV for higher latitudes
+    const latFactor = Math.cos(lat * Math.PI / 180);
+    return Math.max(0.5, Math.min(11, base * latFactor));
 }
 
 /**
@@ -178,27 +209,180 @@ async function searchCities(query) {
 }
 
 /**
- * Core function that fetches all relevant forecast details from the Open-Meteo Weather API
+ * Utility to parse current weather and forecast responses from OpenWeatherMap into state variables.
+ */
+function parseWeatherData(currentData, forecastData) {
+    // 1. Current condition parse
+    const firstForecast = forecastData.list[0];
+    const precipProbability = firstForecast && firstForecast.pop ? Math.round(firstForecast.pop * 100) : 0;
+    
+    state.currentWeather = {
+        temp: currentData.main.temp,
+        humidity: currentData.main.humidity,
+        windSpeed: currentData.wind.speed * 3.6, // m/s to km/h
+        windDeg: currentData.wind.deg,
+        weatherId: currentData.weather[0].id,
+        iconCode: currentData.weather[0].icon,
+        description: currentData.weather[0].description,
+        isDay: currentData.weather[0].icon.endsWith('d') ? 1 : 0,
+        feelsLike: currentData.main.feels_like,
+        uvIndex: estimateUvIndex(currentData.weather[0].id, currentData.coord.lat),
+        precipitation: precipProbability
+    };
+    
+    // Cache raw list for daily select clicks
+    state.fullForecastList = forecastData.list;
+    
+    // 2. Hourly forecast parse (first 8 slots, which covers 24 hours in 3-hour increments)
+    state.hourlyForecast = forecastData.list.slice(0, 8).map(item => {
+        return {
+            time: item.dt * 1000,
+            temp: item.main.temp,
+            weatherId: item.weather[0].id,
+            iconCode: item.weather[0].icon,
+            description: item.weather[0].description,
+            pop: Math.round((item.pop || 0) * 100)
+        };
+    });
+    
+    // 3. Process 5-Day Outlook (group 3-hour slots by day)
+    const days = {};
+    forecastData.list.forEach(item => {
+        const dateStr = item.dt_txt.split(' ')[0]; // 'YYYY-MM-DD'
+        if (!days[dateStr]) {
+            days[dateStr] = {
+                temps: [],
+                weatherIds: {},
+                pops: [],
+                item: item
+            };
+        }
+        days[dateStr].temps.push(item.main.temp);
+        days[dateStr].pops.push(item.pop || 0);
+        
+        const wId = item.weather[0].id;
+        days[dateStr].weatherIds[wId] = (days[dateStr].weatherIds[wId] || 0) + 1;
+    });
+    
+    const dailyList = Object.keys(days).map(dateStr => {
+        const dData = days[dateStr];
+        const maxTemp = Math.max(...dData.temps);
+        const minTemp = Math.min(...dData.temps);
+        const maxPop = Math.max(...dData.pops);
+        
+        let dominantId = 800;
+        let maxCount = 0;
+        for (const [id, count] of Object.entries(dData.weatherIds)) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantId = parseInt(id);
+            }
+        }
+        
+        return {
+            dateStr,
+            temp_max: maxTemp,
+            temp_min: minTemp,
+            pop: Math.round(maxPop * 100),
+            weatherId: dominantId,
+            iconCode: dData.item.weather[0].icon,
+            description: dData.item.weather[0].description
+        };
+    });
+    
+    // Sort chronologically and take first 5 days
+    state.dailyForecast = dailyList.sort((a, b) => a.dateStr.localeCompare(b.dateStr)).slice(0, 5);
+}
+
+/**
+ * Core function that fetches all relevant forecast details from OpenWeatherMap Weather API.
  */
 async function fetchWeatherData(lat, lon) {
+    if (!state.apiKey) {
+        showState("api-key-setup");
+        return;
+    }
+
     showState("loading");
     
-    // Core parameters mapping current condition, hourly trends, and daily outlook metrics
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,wind_direction_10m,precipitation&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
+    const currentUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${state.apiKey}&units=metric`;
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${state.apiKey}&units=metric`;
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Forecast retrieval failed.");
+        const [currentRes, forecastRes] = await Promise.all([
+            fetch(currentUrl),
+            fetch(forecastUrl)
+        ]);
         
-        const data = await response.json();
-        state.currentWeather = data;
+        if (!currentRes.ok || !forecastRes.ok) {
+            throw new Error("Unable to retrieve meteorological coordinates. Confirm your API Key is correct.");
+        }
         
-        // Render all panels
+        const currentData = await currentRes.json();
+        const forecastData = await forecastRes.json();
+        
+        parseWeatherData(currentData, forecastData);
+        
+        if (state.selectedLocation.name === "Current Location") {
+            state.selectedLocation.name = currentData.name;
+            state.selectedLocation.country = currentData.sys.country || "GPS Coordinate";
+        }
+        
         updateDashboardUI();
         showState("dashboard");
     } catch (err) {
-        console.error("Weather API call failed: ", err);
-        dom.errorMessage.textContent = "Unable to retrieve meteorological coordinates. Please verify your connection and try again.";
+        console.error("OpenWeatherMap coordinate fetch failed: ", err);
+        dom.errorMessage.textContent = err.message || "Failed to load location coordinates. Check API key and network connection.";
+        showState("error");
+    }
+}
+
+/**
+ * Fetches weather data directly by city name using OpenWeatherMap.
+ */
+async function fetchWeatherDataByName(cityName) {
+    if (!state.apiKey) {
+        showState("api-key-setup");
+        return;
+    }
+    
+    if (!cityName || cityName.trim().length < 2) return;
+    
+    showState("loading");
+    
+    const currentUrl = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(cityName)}&appid=${state.apiKey}&units=metric`;
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cityName)}&appid=${state.apiKey}&units=metric`;
+    
+    try {
+        const [currentRes, forecastRes] = await Promise.all([
+            fetch(currentUrl),
+            fetch(forecastUrl)
+        ]);
+        
+        if (!currentRes.ok || !forecastRes.ok) {
+            throw new Error(`Could not locate the city "${cityName}". Please check your spelling and try again.`);
+        }
+        
+        const currentData = await currentRes.json();
+        const forecastData = await forecastRes.json();
+        
+        state.selectedLocation = {
+            name: currentData.name,
+            country: currentData.sys.country || "Global Region",
+            latitude: currentData.coord.lat,
+            longitude: currentData.coord.lon
+        };
+        
+        dom.citySearch.value = currentData.name;
+        dom.clearSearch.classList.remove("hidden");
+        
+        parseWeatherData(currentData, forecastData);
+        
+        updateDashboardUI();
+        showState("dashboard");
+    } catch (err) {
+        console.error("OpenWeatherMap city search failed: ", err);
+        dom.errorMessage.textContent = err.message || "City search query failed. Ensure spelling is correct.";
         showState("error");
     }
 }
@@ -213,6 +397,7 @@ function showState(currentState) {
     dom.errorCard.classList.add("hidden");
     dom.welcomeState.classList.add("hidden");
     dom.dashboardGrid.classList.add("hidden");
+    if (dom.apiKeySetupState) dom.apiKeySetupState.classList.add("hidden");
 
     if (currentState === "loading") {
         dom.loadingSpinner.classList.remove("hidden");
@@ -220,6 +405,9 @@ function showState(currentState) {
         dom.errorCard.classList.remove("hidden");
     } else if (currentState === "welcome") {
         dom.welcomeState.classList.remove("hidden");
+        document.body.className = "theme-default";
+    } else if (currentState === "api-key-setup") {
+        if (dom.apiKeySetupState) dom.apiKeySetupState.classList.remove("hidden");
         document.body.className = "theme-default";
     } else if (currentState === "dashboard") {
         dom.dashboardGrid.classList.remove("hidden");
@@ -339,7 +527,7 @@ function renderHourlyChart(hourlyTemps) {
 /**
  * Updates the hourly timeline display when a specific day is selected from 7-Day Outlook
  */
-function renderHourlyTimeline(dateStr, hourlyTemps, hourlyPrecip) {
+function renderHourlyTimeline(dateStr, dayHourlyRaw) {
     if (!dom.hourlyTimeline) return;
     
     dom.hourlyTimeline.innerHTML = "";
@@ -356,101 +544,84 @@ function renderHourlyTimeline(dateStr, hourlyTemps, hourlyPrecip) {
     dom.hourlyTimeline.appendChild(header);
     
     // Create hourly items for the selected day
-    for (let i = 0; i < hourlyTemps.length; i += 3) { // Show every 3 hours to avoid clutter
-        const hour = i;
-        const temp = hourlyTemps[i];
-        const precip = hourlyPrecip[i] || 0;
+    dayHourlyRaw.forEach(item => {
+        const dateObj = new Date(item.dt * 1000);
+        const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const tempStr = formatTemp(item.main.temp);
+        const precipStr = `${Math.round((item.pop || 0) * 100)}%`;
         
-        const item = document.createElement("div");
-        item.style.display = "flex";
-        item.style.alignItems = "center";
-        item.style.justifyContent = "space-between";
-        item.style.padding = "10px 0";
-        item.style.fontSize = "13px";
-        item.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+        const hourItem = document.createElement("div");
+        hourItem.style.display = "flex";
+        hourItem.style.alignItems = "center";
+        hourItem.style.justifyContent = "space-between";
+        hourItem.style.padding = "10px 0";
+        hourItem.style.fontSize = "13px";
+        hourItem.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
         
-        const timeStr = String(hour).padStart(2, "0") + ":00";
-        const tempStr = formatTemp(temp);
-        const precipStr = `${precip}%`;
-        
-        item.innerHTML = `
+        hourItem.innerHTML = `
             <span style="color: rgba(255,255,255,0.9);">${timeStr}</span>
             <span style="color: var(--accent-color); font-weight: 600;">${tempStr}</span>
             <span style="color: rgba(99, 150, 241, 0.8);" title="Precipitation chance">💧 ${precipStr}</span>
         `;
         
-        dom.hourlyTimeline.appendChild(item);
-    }
+        dom.hourlyTimeline.appendChild(hourItem);
+    });
 }
 
 /**
- * Redraws, maps, and repopulates the entire Weather Dashboard interface using state caches
+ * Redraws, maps, and repopulates the entire Weather Dashboard interface using state caches.
  */
 function updateDashboardUI() {
-    const data = state.currentWeather;
-    if (!data) return;
+    const current = state.currentWeather;
+    if (!current) return;
 
-    const current = data.current;
-    const hourly = data.hourly;
-    const daily = data.daily;
+    const hourly = state.hourlyForecast;
+    const daily = state.dailyForecast;
 
-    // 1. Resolve Weather Code config (icon, description, theme)
-    const weatherConfig = getWeatherConfig(current.weather_code, current.is_day);
+    // 1. Resolve weather config ID to design variables
+    const weatherConfig = getOpenWeatherConfig(current.weatherId, current.iconCode);
 
-    // Apply the active dynamic CSS theme on body
+    // Apply active CSS theme on body
     document.body.className = weatherConfig.theme;
 
-    // 2. Load Location Details
+    // 2. Location name and country
     dom.locationName.textContent = state.selectedLocation.name;
     dom.locationCountry.textContent = state.selectedLocation.country;
     
-    // Set formatted local time/date string
     const options = { weekday: 'long', month: 'short', day: 'numeric' };
     dom.currentDate.textContent = new Date().toLocaleDateString('en-US', options);
 
-    // 3. Render Large Primary Weather Display
-    dom.currentTemp.textContent = Math.round(state.useFahrenheit ? cToF(current.temperature_2m) : current.temperature_2m);
-    dom.weatherDescription.textContent = weatherConfig.label;
+    // 3. Main temperature display
+    dom.currentTemp.textContent = Math.round(state.useFahrenheit ? cToF(current.temp) : current.temp);
+    dom.weatherDescription.textContent = current.description.charAt(0).toUpperCase() + current.description.slice(1);
     dom.weatherDynamicIcon.innerHTML = `<i data-lucide="${weatherConfig.icon}" class="main-weather-icon"></i>`;
 
     // 4. Set Daily high and low range badge
-    const todayMax = daily.temperature_2m_max[0];
-    const todayMin = daily.temperature_2m_min[0];
+    const todayMax = daily[0] ? daily[0].temp_max : current.temp;
+    const todayMin = daily[0] ? daily[0].temp_min : current.temp;
     dom.minMaxTemp.textContent = `Min: ${formatTemp(todayMin)} | Max: ${formatTemp(todayMax)}`;
 
-    // 5. Populate Detailed Weather metrics
-    dom.metricHumidity.textContent = `${current.relative_humidity_2m}%`;
-    dom.metricWind.textContent = `${current.wind_speed_10m.toFixed(1)} km/h`;
-    dom.metricWindDir.textContent = getWindCompass(current.wind_direction_10m);
+    // 5. Metric card data values
+    dom.metricHumidity.textContent = `${current.humidity}%`;
+    dom.metricWind.textContent = `${current.windSpeed.toFixed(1)} km/h`;
+    dom.metricWindDir.textContent = getWindCompass(current.windDeg);
     
-    const uvIndex = daily.uv_index_max[0];
-    dom.metricUv.textContent = uvIndex.toFixed(1);
-    dom.metricUvRisk.textContent = getUvRiskLevel(uvIndex);
-    
-    // Fetch precipitation chance for the active current hour
-    const currentHourIndex = new Date().getHours();
-    dom.metricRain.textContent = `${hourly.precipitation_probability[currentHourIndex]}%`;
+    dom.metricUv.textContent = current.uvIndex.toFixed(1);
+    dom.metricUvRisk.textContent = getUvRiskLevel(current.uvIndex);
+    dom.metricRain.textContent = `${current.precipitation}%`;
 
-    // 6. Generate 8-Hour Consecutive Hourly Timeline Row & populate chart data points
+    // 6. Generate 8 consecutive hourly trend list items
     dom.hourlyTimeline.innerHTML = "";
-    const currentHour = new Date().getHours();
     const hourlyDataPoints = [];
 
-    for (let i = 0; i < 8; i++) {
-        const targetIdx = currentHour + i;
-        const timeStr = hourly.time[targetIdx];
-        const temp = hourly.temperature_2m[targetIdx];
-        const code = hourly.weather_code[targetIdx];
-        
-        // Cache node coordinates for SVG graph
-        hourlyDataPoints.push({ temp });
+    hourly.forEach((hourData, i) => {
+        hourlyDataPoints.push({ temp: hourData.temp });
 
-        // Map hour time string to formatted clock layout
-        const dateObj = new Date(timeStr);
+        const dateObj = new Date(hourData.time);
         let hourLabel = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
         if (i === 0) hourLabel = "Now";
 
-        const hourConfig = getWeatherConfig(code, current.is_day);
+        const hourConfig = getOpenWeatherConfig(hourData.weatherId, hourData.iconCode);
 
         const item = document.createElement("div");
         item.className = `hourly-item ${i === 0 ? 'active' : ''}`;
@@ -459,39 +630,32 @@ function updateDashboardUI() {
             <div class="hourly-icon-wrapper">
                 <i data-lucide="${hourConfig.icon}"></i>
             </div>
-            <span class="hourly-temp">${formatTemp(temp)}</span>
+            <span class="hourly-temp">${formatTemp(hourData.temp)}</span>
         `;
         dom.hourlyTimeline.appendChild(item);
-    }
+    });
 
-    // Call the SVG Line drawing function
     renderHourlyChart(hourlyDataPoints);
 
-    // 7. Populates 7-Day Long range forecast list
+    // 7. Populates 5-day Outlook list rows
     dom.dailyForecast.innerHTML = "";
     
-    // Find aggregate bounding limits across all 7 days to size progress bars proportionately
-    const globalMax = Math.max(...daily.temperature_2m_max);
-    const globalMin = Math.min(...daily.temperature_2m_min);
+    const dailyMaxes = daily.map(d => d.temp_max);
+    const dailyMines = daily.map(d => d.temp_min);
+    const globalMax = Math.max(...dailyMaxes);
+    const globalMin = Math.min(...dailyMines);
     const globalRange = globalMax - globalMin || 2;
 
-    for (let i = 0; i < 7; i++) {
-        const timeStr = daily.time[i];
-        const maxTemp = daily.temperature_2m_max[i];
-        const minTemp = daily.temperature_2m_min[i];
-        const code = daily.weather_code[i];
-
-        const dayConfig = getWeatherConfig(code, 1); // Defaults to day icon on list
-
-        // Compute proportional bar fill bounds
-        const barLeft = ((minTemp - globalMin) / globalRange) * 100;
-        const barRight = ((globalMax - maxTemp) / globalRange) * 100;
+    daily.forEach((dayData, i) => {
+        const dayConfig = getOpenWeatherConfig(dayData.weatherId, dayData.iconCode);
+        const barLeft = ((dayData.temp_min - globalMin) / globalRange) * 100;
+        const barRight = ((globalMax - dayData.temp_max) / globalRange) * 100;
 
         const row = document.createElement("div");
         row.className = "daily-item";
         row.style.cursor = "pointer";
         row.innerHTML = `
-            <span class="daily-name">${formatDayName(timeStr)}</span>
+            <span class="daily-name">${formatDayName(dayData.dateStr)}</span>
             <div class="daily-icon-wrapper" title="${dayConfig.label}">
                 <i data-lucide="${dayConfig.icon}"></i>
             </div>
@@ -499,46 +663,34 @@ function updateDashboardUI() {
                 <div class="daily-temp-bar-fill" style="left: ${barLeft}%; right: ${barRight}%;"></div>
             </div>
             <div class="daily-temps">
-                <span class="daily-temp-max">${formatTemp(maxTemp)}</span>
-                <span class="daily-temp-min">${formatTemp(minTemp)}</span>
+                <span class="daily-temp-max">${formatTemp(dayData.temp_max)}</span>
+                <span class="daily-temp-min">${formatTemp(dayData.temp_min)}</span>
             </div>
         `;
         
-        // Add click handler to show hourly forecast for selected day
+        // Add click handler to filter hourly data for that specific forecast day
         row.addEventListener("click", () => {
-            // Remove active state from all daily items
             document.querySelectorAll(".daily-item").forEach(item => {
                 item.classList.remove("active");
             });
             
-            // Add active state to clicked item
             row.classList.add("active");
             
-            // Get hourly data for the selected day
-            const startIdx = i * 24; // Each day has 24 hours
-            const endIdx = startIdx + 24;
-            const dayHourlyTempsRaw = hourly.temperature_2m.slice(startIdx, endIdx);
-            const dayHourlyPrecip = hourly.precipitation_probability.slice(startIdx, endIdx);
+            const dateStr = dayData.dateStr;
+            const dayHourlyRaw = state.fullForecastList.filter(item => item.dt_txt.split(' ')[0] === dateStr);
+            const dayHourlyTemps = dayHourlyRaw.map(item => ({ temp: item.main.temp }));
             
-            // Format as expected by renderHourlyChart (array of objects with .temp property)
-            const dayHourlyTemps = dayHourlyTempsRaw.map(temp => ({ temp }));
-            
-            // Update hourly chart for selected day
             renderHourlyChart(dayHourlyTemps);
-            
-            // Update hourly timeline labels for the selected day
-            renderHourlyTimeline(timeStr, dayHourlyTempsRaw, dayHourlyPrecip);
+            renderHourlyTimeline(dayData.dateStr, dayHourlyRaw);
         });
         
-        // Click first day by default to show its hourly data
         if (i === 0) {
             row.classList.add("active");
         }
         
         dom.dailyForecast.appendChild(row);
-    }
+    });
 
-    // Refresh lucide SVG elements injected into DOM dynamically
     lucide.createIcons();
 }
 
@@ -598,6 +750,17 @@ dom.citySearch.addEventListener("input", debounce((e) => {
     }
 }, 350));
 
+// Handles direct search when user presses Enter key in search input
+dom.citySearch.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        const val = e.target.value;
+        if (val.trim().length >= 2) {
+            dom.searchSuggestions.classList.add("hidden");
+            fetchWeatherDataByName(val);
+        }
+    }
+});
+
 // Clears search block input and suggestions panels
 dom.clearSearch.addEventListener("click", () => {
     dom.citySearch.value = "";
@@ -606,12 +769,53 @@ dom.clearSearch.addEventListener("click", () => {
     dom.citySearch.focus();
 });
 
-// Closes autocomplete panel when clicking outside suggestions boundaries
+// Closes suggestions and API Key dropdowns on outside boundaries click
 document.addEventListener("click", (e) => {
     if (!dom.citySearch.contains(e.target) && !dom.searchSuggestions.contains(e.target)) {
         dom.searchSuggestions.classList.add("hidden");
     }
+    if (dom.apiKeyDropdown && !dom.apiKeyDropdown.contains(e.target) && !dom.apiKeyBtn.contains(e.target)) {
+        dom.apiKeyDropdown.classList.add("hidden");
+    }
 });
+
+// Toggle API key configuration dropdown
+if (dom.apiKeyBtn) {
+    dom.apiKeyBtn.addEventListener("click", () => {
+        dom.apiKeyDropdown.classList.toggle("hidden");
+        if (!dom.apiKeyDropdown.classList.contains("hidden")) {
+            dom.apiKeyInput.value = state.apiKey;
+            dom.apiKeyInput.focus();
+        }
+    });
+}
+
+// Function to handle saving of the API key
+function handleSaveAPIKey(newKey) {
+    if (!newKey || newKey.trim() === "") {
+        alert("Please enter a valid API Key.");
+        return;
+    }
+    
+    state.apiKey = newKey.trim();
+    localStorage.setItem("openweather_api_key", state.apiKey);
+    
+    // Refresh weather information
+    fetchWeatherData(state.selectedLocation.latitude, state.selectedLocation.longitude);
+}
+
+if (dom.apiKeySaveBtn) {
+    dom.apiKeySaveBtn.addEventListener("click", () => {
+        handleSaveAPIKey(dom.apiKeyInput.value);
+        dom.apiKeyDropdown.classList.add("hidden");
+    });
+}
+
+if (dom.setupKeySaveBtn) {
+    dom.setupKeySaveBtn.addEventListener("click", () => {
+        handleSaveAPIKey(dom.setupKeyInput.value);
+    });
+}
 
 // GPS Navigation clicks
 dom.gpsBtn.addEventListener("click", handleGPSLocate);
@@ -630,7 +834,11 @@ dom.errorRetryBtn.addEventListener("click", () => {
     if (state.currentWeather) {
         showState("dashboard");
     } else {
-        showState("welcome");
+        if (!state.apiKey) {
+            showState("api-key-setup");
+        } else {
+            showState("welcome");
+        }
     }
 });
 
@@ -682,8 +890,13 @@ window.addEventListener("DOMContentLoaded", () => {
     // Inject initial static Lucide Icons mapped in HTML templates
     lucide.createIcons();
     
-    // Loads Default City (Mumbai, India) on bootstrap startup
-    fetchWeatherData(state.selectedLocation.latitude, state.selectedLocation.longitude);
+    // Checks if key is configured, else prompt onboard
+    if (!state.apiKey) {
+        showState("api-key-setup");
+    } else {
+        // Loads Default City (Mumbai, India) on bootstrap startup
+        fetchWeatherData(state.selectedLocation.latitude, state.selectedLocation.longitude);
+    }
 
     // Register Progressive Web App (PWA) Service Worker for offline/install capabilities
     if ('serviceWorker' in navigator) {

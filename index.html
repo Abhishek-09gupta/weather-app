@@ -52,6 +52,23 @@
                         <i data-lucide="map-pin"></i>
                         <span>Locate</span>
                     </button>
+
+                    <div class="api-key-container">
+                        <button id="api-key-btn" class="control-btn" title="Configure OpenWeatherMap API Key" aria-label="Configure API Key">
+                            <i data-lucide="key"></i>
+                            <span>API Key</span>
+                        </button>
+                        <div id="api-key-dropdown" class="api-key-dropdown hidden">
+                            <h3>OpenWeatherMap API Key</h3>
+                            <div class="api-key-input-group">
+                                <input type="text" id="api-key-input" placeholder="Enter API Key..." autocomplete="off">
+                                <button id="api-key-save-btn" class="action-btn">Save</button>
+                            </div>
+                            <div class="api-key-help">
+                                <a href="https://openweathermap.org/appid" target="_blank" rel="noopener">Get a free key <i data-lucide="external-link"></i></a>
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="unit-toggle-wrapper">
                         <span class="unit-label">°C</span>
@@ -84,6 +101,23 @@
                 <h2>Weather Query Failed</h2>
                 <p id="error-message">Could not retrieve the requested location. Please check your spelling and try again.</p>
                 <button id="error-retry-btn" class="action-btn">Dismiss</button>
+            </div>
+
+            <!-- API Key Setup State -->
+            <div id="api-key-setup-state" class="welcome-card hidden">
+                <div class="welcome-graphics">
+                    <div class="sun-glow"></div>
+                    <i data-lucide="key" class="welcome-sun animate-pulse" style="animation-duration: 2s;"></i>
+                </div>
+                <h2>Configure OpenWeatherMap</h2>
+                <p>To access live atmospheric telemetry, please configure your free OpenWeatherMap API Key.</p>
+                <div class="setup-key-input-wrapper">
+                    <input type="text" id="setup-key-input" placeholder="Paste your API Key here..." autocomplete="off">
+                    <button id="setup-key-save-btn" class="welcome-locate-btn">Save API Key</button>
+                </div>
+                <a href="https://openweathermap.org/appid" target="_blank" rel="noopener" class="setup-key-link">
+                    Need a key? Register on OpenWeatherMap (free) <i data-lucide="external-link"></i>
+                </a>
             </div>
 
             <!-- Entry / Welcome State -->
@@ -216,9 +250,9 @@
                         </div>
                     </section>
 
-                    <!-- 7-Day Long Range Forecast -->
+                    <!-- 5-Day Long Range Forecast -->
                     <section class="weather-card daily-forecast-card">
-                        <h3>7-Day Outlook</h3>
+                        <h3>5-Day Outlook</h3>
                         <div class="daily-forecast-list" id="daily-forecast">
                             <!-- Injected 7-day weather entries -->
                         </div>

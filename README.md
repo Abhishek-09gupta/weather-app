@@ -51,15 +51,27 @@ Weather App/
 
 ## 🚀 Quick Start / How to Run
 
-### 🌐 Web Browser & PWA Mode
+### 🌐 Web URL & PWA Deployment
 
-#### Method A: Direct Launch
+#### Method A: Live Web URL (GitHub Pages)
+The easiest way to launch the application with full PWA installation and offline capabilities is through the live hosted URL:
+👉 **[Skyflow Weather App Live URL](https://abhishek-09gupta.github.io/weather-app/)**
+
+##### 🛠️ How to Enable GitHub Pages for your repository:
+1. Go to your repository settings on GitHub: `https://github.com/Abhishek-09gupta/weather-app/settings`.
+2. Under **Code and automation** in the sidebar, click **Pages**.
+3. Under **Build and deployment**, set **Source** to `Deploy from a branch`.
+4. Choose the `main` branch and `/ (root)` folder, then click **Save**.
+5. Wait 1–2 minutes, and your site will be live at `https://abhishek-09gupta.github.io/weather-app/`.
+
+#### Method B: Direct Local Launch
 1. Clone or download this repository.
-2. Double-click the **`index.html`** file in your local file explorer to open it in any modern web browser.
-*Note: Service Worker caching and PWA installation require a secure origin (HTTPS or localhost) and will not initialize via `file://` URLs.*
+2. Double-click the **`index.html`** file in your local file explorer to open it instantly.
+*Note: Service Worker caching and PWA installation require a secure HTTPS origin or localhost, and will not initialize via file:// URLs.*
 
-#### Method B: PWA Local Server Installation
-1. Start a simple local HTTP server from the root directory:
+#### Method C: Local Server hosting
+If you want to run it locally with PWA support:
+1. Start a simple local HTTP server:
    ```bash
    # Python 3
    python -m http.server 8000

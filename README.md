@@ -1,32 +1,34 @@
 # 🌤️ Skyflow Weather Dashboard
 
-Skyflow is an ultra-premium, interactive, and beautifully designed **Weather Dashboard** built with modern web technologies. It is fully responsive, highly performant, features stunning **glassmorphic design aesthetics**, and is configured as a **Progressive Web App (PWA)** for easy installation on desktop and mobile platforms.
+Skyflow is an ultra-premium, interactive, and beautifully designed **Weather Dashboard** built with modern web technologies. It is fully responsive, highly performant, features stunning **glassmorphic design aesthetics**, and is configured as a cross-platform desktop application using **Electron** as well as a **Progressive Web App (PWA)** for easy installation on mobile and web platforms.
 
-Live API queries are powered by **Open-Meteo** (completely free, zero-key public atmospheric data).
+Under the hood, Skyflow integrates two meteorological APIs:
+1. **[Open-Meteo Geocoding API](https://open-meteo.com/en/docs/geocoding-api):** Completely free, zero-key public atmospheric data API used for fast, debounced city auto-suggestions.
+2. **[OpenWeatherMap API](https://openweathermap.org/api):** Standard weather condition and multi-day forecasting API. This requires a free API key, which can be configured directly inside the application UI and is persisted in local storage.
 
 ---
 
 ## ✨ Features
 
-- **🌈 Dynamic Aesthetic Themes:** The visual color scheme, ambient background meshes, and glowing accent circles shift dynamically matching real-time weather codes (Sunny, Cloudy, Rainy, Stormy, Snowy, Night).
-- **📱 PWA Standalone App Integration:** Fully configure and installable directly from your browser as a desktop or mobile application. Includes a modern resizable vector branding icon (`icon.svg`).
-- **📶 Offline Support:** Employs Service Workers (`sw.js`) to cache the application shell, layouts, styles, dynamic script states, and web fonts, enabling instantaneous launching and offline functionality.
-- **📊 Library-Free SVG Curve Chart:** Lightweight, custom vector line chart drawn on-the-fly inside an SVG, mapping 8 hours of temperatures with bezier coordinates, glowing data nodes, and hover-triggered labels.
-- **🔍 Geocoding Auto-Complete:** Fast, debounced (350ms) query auto-suggestions for searching cities across the globe.
-- **📍 GPS Precision Locate:** Connects with the standard browser Geolocation telemetry to load coordinates and retrieve real-time atmospheric data.
-- **⚡ In-Memory Temp Scale Conversion:** Instantly toggles between Celsius (°C) and Fahrenheit (°F) via standard caching without repeating network calls.
+- **🌈 Dynamic Aesthetic Themes:** The visual color scheme, ambient background meshes, and glowing accent circles shift dynamically matching real-time weather codes (Sunny/Clear, Cloudy, Rainy, Stormy, Snowy, Night/Dark).
+- **🖥️ Desktop Electron App:** Packaged as a native desktop application with a borderless/chromeless modern layout (`main.js`).
+- **📱 PWA Standalone Integration:** Installable directly from a web browser as a standalone desktop or mobile application. Includes a modern vector branding icon (`icon.svg`).
+- **📶 Offline Support:** Employs a custom Service Worker (`sw.js`) utilizing a cache-first network-fallback strategy to load the app shell, stylesheets, icons, and dynamic scripts instantly—even offline.
+- **📊 Library-Free SVG Curve Chart:** A lightweight, interactive vector temperature line chart drawn dynamically using custom SVG Bezier paths, glowing data nodes, and custom labels.
+- **📅 5-Day Outlook with Deep Dive:** Browse the 5-day forecast with custom range bar visualizations. Click on any forecast day to dynamically re-render the SVG temperature chart and populate a detailed hourly forecast timeline for that day.
+- **🔍 Geocoding Auto-Complete:** Fast, debounced (350ms) suggestions for searching cities worldwide.
+- **📍 GPS Precision Locate:** Integrates with the browser Geolocation API to quickly fetch local coordinate conditions.
+- **⚡ In-Memory Temp Scale Conversion:** Instantly toggles between Celsius (°C) and Fahrenheit (°F) cached values without triggering redundant network calls.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Core Structure:** HTML5 (Semantic and fully accessible)
-- **Styling Architecture:** Vanilla CSS3 (Custom Glassmorphism, variables, fluid `@keyframes` micro-animations, and viewport grids)
-- **Application Engine:** ES6+ JavaScript (Asynchronous fetch streams, SVG paths generation, debouncers, and states manager)
-- **Icons & Typography:** Outfit & Inter (Google Web Fonts) and Lucide Vectors (CDN)
-- **APIs:** 
-  - [Open-Meteo Forecast Engine](https://open-meteo.com/) (Forecasts & UV Indicators)
-  - [Open-Meteo Geocoding Search](https://open-meteo.com/en/docs/geocoding-api) (Autocomplete Suggestions)
+- **Core Structure:** HTML5 (Semantic and fully accessible markup)
+- **Styling Architecture:** Vanilla CSS3 (Custom Glassmorphism, CSS variables, fluid keyframe micro-animations, and viewport grid layouts)
+- **Application Engine:** ES6+ JavaScript (Asynchronous fetch promises, SVG path generators, input debouncers, and client-side state management)
+- **Desktop Runtime:** Electron (v42.3.2)
+- **Icons & Typography:** Outfit & Inter (Google Fonts) and Lucide Vectors (CDN)
 
 ---
 
@@ -34,26 +36,71 @@ Live API queries are powered by **Open-Meteo** (completely free, zero-key public
 
 ```
 Weather App/
-├── index.html       # Primary layout, grids container, and app header shell
-├── style.css        # Responsive layouts, glassmorphic styles, keyframes, and themes
-├── app.js           # API interfaces, SVG line charting, geolocating, and PWA setup
-├── manifest.json    # PWA configuration metadata and mobile display controls
-├── sw.js            # Service worker caching and offline request interception
-├── icon.svg         # High-fidelity vector launcher icon and branding shield
-└── README.md        # Technical project manual
+├── index.html       # Primary layout, grid container, and application shell
+├── style.css        # Glassmorphic styles, keyframes, variables, and weather themes
+├── app.js           # API clients, SVG curve plotting, timeline renderers, and state logic
+├── main.js          # Electron desktop main entry process and browser window controllers
+├── package.json     # Node scripts, build configs, and package manager details
+├── manifest.json    # PWA configuration metadata and mobile standalone controls
+├── sw.js            # PWA Service Worker script for offline asset caching
+├── icon.svg         # High-fidelity vector launcher and branding icon
+└── README.md        # Technical project documentation
 ```
 
 ---
 
 ## 🚀 Quick Start / How to Run
 
-Because the application is built entirely as a high-performance client-side SPA with zero heavy bundlers or build steps, running it is exceptionally easy:
+### 🌐 Web Browser & PWA Mode
 
-### Method A: Direct Launch
+#### Method A: Direct Launch
 1. Clone or download this repository.
-2. Double-click the **`index.html`** file in your local file explorer to open it instantly in any modern web browser.
+2. Double-click the **`index.html`** file in your local file explorer to open it in any modern web browser.
+*Note: Service Worker caching and PWA installation require a secure origin (HTTPS or localhost) and will not initialize via `file://` URLs.*
 
-### Method B: Standalone App Installation
-1. Open the project folder using a simple local HTTP server (e.g., VS Code Live Server, `npx http-server`, or `python -m http.server`).
-2. Navigate to the localhost address in your web browser.
-3. Click the **Install Icon** (+ or monitor arrow) in the browser's address bar to install **Skyflow** as a native, standalone app on your system!
+#### Method B: PWA Local Server Installation
+1. Start a simple local HTTP server from the root directory:
+   ```bash
+   # Python 3
+   python -m http.server 8000
+   
+   # Node.js (npx)
+   npx http-server -p 8000
+   ```
+2. Navigate to `http://localhost:8000` in your web browser.
+3. Click the **Install** button in the top navigation bar (or via the browser's address bar prompt) to install **Skyflow** as a native desktop or mobile app.
+
+---
+
+### 💻 Electron Desktop Mode
+
+#### Prerequisites
+- Make sure [Node.js](https://nodejs.org/) is installed on your computer.
+
+#### 1. Install Dependencies
+Run the following command in the workspace directory to install Electron:
+```bash
+npm install
+```
+
+#### 2. Run the Application
+Start the Electron desktop frame locally:
+```bash
+npm start
+```
+
+#### 3. Package the Executable
+To package the app into a standalone production installer/executable (e.g., Windows NSIS target):
+```bash
+npm run dist
+```
+The packaged assets and ready-to-use binaries will be generated inside the `dist/` directory.
+
+---
+
+## 🔑 API Configuration
+
+1. Launch the app (web, PWA, or Electron desktop).
+2. On initial startup, a setup card will guide you to enter an **OpenWeatherMap API Key**.
+3. If you do not have one, register for free at [OpenWeatherMap App ID](https://openweathermap.org/appid) to obtain your key.
+4. Input the key in the field and click **Save**. You can update this key anytime by clicking the **API Key** button in the header controls.

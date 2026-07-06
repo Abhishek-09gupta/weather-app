@@ -1,0 +1,32 @@
+{
+  "name": "skyflow-weather",
+  "version": "1.0.0",
+  "description": "Premium glassmorphic weather dashboard built with Electron and PWA features.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^42.3.2",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.skyflow.weather",
+    "productName": "Skyflow Weather",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/*",
+      "!dist/*",
+      "!build/*"
+    ]
+  }
+}
